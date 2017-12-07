@@ -1,5 +1,5 @@
-function [S, rev, blocked] = blockedReac(S, rev, solver)
-% finding the blocked reactions and removing them from the network
+function [S, rev, blocked] = blockedReac(S, rev, solver, tol)
+    %% finding the blocked reactions and removing them from the network
     [m, n] = size(S);
     blocked = zeros(n, 1);
     % identifying the blocked irreversible reactions
@@ -9,7 +9,7 @@ function [S, rev, blocked] = blockedReac(S, rev, solver)
     B = speye(sum(blocked == 0));
     B = B(:, rev(blocked == 0) == 1);
     X = mldivide(transpose(S(:, blocked == 0)), B);
-    blocked(blocked == 0 & rev == 1) = all(abs(transpose(S(:, blocked == 0))*X-B) < 1e-10, 1);
+    blocked(blocked == 0 & rev == 1) = all(abs(transpose(S(:, blocked == 0))*X-B) < tol, 1);
     % removing the blocked reactions
     S(:, blocked == 1) = [];
     rev(blocked == 1) = [];

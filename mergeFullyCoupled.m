@@ -1,5 +1,5 @@
 function [S, rev] = mergeFullyCoupled(S, rev, i, j, c)
-% merging the fully coupled reactions
+    %% merging the fully coupled reactions
     S(:, i) = S(:, i) + c*S(:, j);
     S(:, j) = [];
     % deleting zero rows from the stoichiometric matrix

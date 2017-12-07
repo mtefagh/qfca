@@ -1,5 +1,5 @@
 function result = directionallyCoupled(S, rev, i, solver)
-% the currently available options for the LP solver are linprog and gurobi
+    %% the currently available options for the LP solver are linprog and gurobi
     [m, n] = size(S);
     irevIndex = [m+1:m+i-1, m+i+1:m+n];
     irevIndex = irevIndex(rev([1:i-1, i+1:n]) == 0);
