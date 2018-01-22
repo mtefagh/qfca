@@ -1,5 +1,5 @@
 function [S, rev, blocked] = blockedReac(S, rev, solver, tol)
-    %% finding the blocked reactions and removing them from the network
+% blockedReac finds the blocked reactions and removes them from the network
     [m, n] = size(S);
     blocked = zeros(n, 1);
     % identifying the blocked irreversible reactions
