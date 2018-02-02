@@ -1,7 +1,7 @@
 function [S, rev, fctable, blocked] = QFCA(S, rev, solver, varargin)
-% QFCA computes the table of the flux coupling relations and the list of 
-% blocked reactions for a metabolic network specified by its stoichiometric 
-% matrix and irreversible reactions and also returns the reduced network.
+% QFCA computes the table of flux coupling relations and the list of blocked 
+% reactions for a metabolic network specified by its stoichiometric matrix 
+% and irreversible reactions and also returns the reduced metabolic network.
 %
 % [S_reduced, rev_reduced, fctable, blocked] = QFCA(S, rev, solver [, tol])
 %   - S: the sparse stoichiometric matrix
@@ -43,8 +43,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, solver, varargin)
     fprintf('Identifying the blocked reactions and removing them from the network: %.3f\n', t2-t1);
     t1 = t2;
     [m, n] = size(S);
-    fprintf('\nReduced number of metabolites = %d;\t', m);
-    fprintf('Reduced number of reactions = %d\n', n);
+    fprintf('Reduced number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', m, n, nnz(S));
     %% identifying the fully coupled pairs of reactions
     % finding the trivial full couplings
     flag = true;
@@ -97,8 +96,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, solver, varargin)
     fprintf('Finding the full coupling relations: %.3f\n', t2-t1);
     t1 = t2;
     [m, n] = size(S);
-    fprintf('\nReduced number of metabolites = %d;\t', m);
-    fprintf('Reduced number of reactions = %d\n', n);
+    fprintf('Reduced number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', m, n, nnz(S));
     %% correcting the reversibility conditions 
     % computing the set of fully reversible reactions 
     [~, ~, prev] = blockedReac(S(:, rev == 1), rev(rev == 1), solver, tol);
@@ -195,6 +193,5 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, solver, varargin)
     end
     fctable = fctable + eye(l);
     fprintf('Inferring by the transitivity of full couplings: %.3f\n', cputime-t1);
-    fprintf('\nReduced number of metabolites = %d;\t', m);
-    fprintf('Reduced number of reactions = %d\n', n);
+    fprintf('Reduced number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', m, n, nnz(S));
 end
