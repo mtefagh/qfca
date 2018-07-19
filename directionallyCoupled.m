@@ -6,7 +6,7 @@ function result = directionallyCoupled(S, rev, i, solver)
     irevIndex = irevIndex(rev([1:i-1, i+1:n]) == 0);
     model.obj = zeros(m+n, 1);
     model.obj(irevIndex) = 1;
-    model.A = [S', -speye(n)];
+    model.A = [S.', -speye(n)];
     model.sense = repmat('=', n, 1);
     model.sense(rev == 0) = '<';
     model.rhs = zeros(n, 1);

@@ -1,11 +1,13 @@
-function [S, rev, fctable, blocked] = QFCA(S, rev, varargin)
+function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
 % QFCA computes the table of flux coupling relations and the list of blocked 
 % reactions for a metabolic network specified by its stoichiometric matrix 
 % and irreversible reactions and also returns the reduced metabolic network.
 %% Usage
-% [S_reduced, rev_reduced, fctable, blocked] = QFCA(S, rev [, solver])
+% [S_reduced, rev_reduced, fctable, blocked] = QFCA(S, rev, reduction [, solver])
 %   - S: the associated sparse stoichiometric matrix
 %   - rev: the 0-1 vector with 1's corresponding to the reversible reactions
+%   - reduction: logical indicating whether DCE-induced reductions should be
+%   carried out or not
 %   - solver: the LP solver to be used; the currently available options are
 %   either 'linprog' or 'gurobi' with the default value of 'linprog'
 %   
@@ -96,8 +98,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, varargin)
     [m, n] = size(S);
     fprintf('Reduced number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', ...
         m, n, nnz(S));
-    %% correcting the reversibility conditions 
-    % computing the set of fully reversible reactions 
+    %% computing the set of fully reversible reactions 
     [~, ~, prev] = blockedReac(S(:, rev == 1), rev(rev == 1), solver);
     % marking the Frev set by 2 in the rev vector
     rev(rev == 1) = 2 - prev;
@@ -105,7 +106,9 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, varargin)
     fprintf('Correcting the reversibility types: %.3f\n', t2-t1);
     t1 = t2;
     %% QFCA finds the coupling coefficients
+    k = n;
     reacs = 1:n;
+    reactions = false(n, 1);
     A = zeros(n);
     for i = n:-1:1
         if rev(i) ~= 2
@@ -113,74 +116,80 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, varargin)
             result = directionallyCoupled(S, rev, i, solver);
             dcouplings = result.x(m+1:end) < -0.5;
             dcouplings(i) = false;
-            A(reacs, reacs(i)) = 3*dcouplings;
-            A(reacs(i), reacs) = 4*dcouplings.';
-            %% Prev ---> Irev couplings
             if any(dcouplings)
-                rev(i) = 0;
+                A(reacs(rev == 0), i) = 3*dcouplings(rev == 0);
+                A(i, reacs(rev == 0)) = 4*dcouplings(rev == 0).';
                 dcouplings(i) = true;
+                % correcting the reversibility conditions
+                if rev(i) == 1
+                    rev(i) = 0;
+                    if ~reduction && result.x(m+i) < 0
+                        S(:, i) = -S(:, i);
+                    end
+                end
                 % inferring by the transitivity of directional coupling relations
-                A(reacs(rev == 1), reacs(i)) = max(A(reacs(rev == 1), ...
+                A(reacs(rev == 1), i) = max(A(reacs(rev == 1), ...
                     reacs(dcouplings)), [], 2);
-                A(reacs(i), reacs(rev == 1)) = max(A(reacs(dcouplings), ...
+                A(i, reacs(rev == 1)) = max(A(reacs(dcouplings), ...
                     reacs(rev == 1)), [], 1);
-                if any(~dcouplings & rev == 1 & A(reacs, reacs(i)) == 0)
+                %% Prev ---> Irev couplings
+                if any(A(reacs(rev == 1), i) == 0)
                     coupled = false(n, 1);
                     [Q, R, ~] = qr(transpose(S(:, ~dcouplings)));
                     tol = norm(S(:, ~dcouplings), 'fro')*eps(class(S));
                     Z = Q(:, sum(abs(diag(R)) > tol)+1:end);
-                    coupled(~dcouplings & rev == 1 & A(reacs, reacs(i)) == 0) = ...
+                    coupled(~dcouplings & rev == 1 & A(reacs, i) == 0) = ...
                         vecnorm(Z(rev(~dcouplings) == 1 & A(reacs(~dcouplings), ...
-                        reacs(i)) == 0, :), 2, 2) < tol;
-                    A(reacs(coupled), reacs(i)) = 3;
-                    A(reacs(i), reacs(coupled)) = 4;
+                        i) == 0, :), 2, 2) < tol;
+                    A(reacs(coupled), i) = 3;
+                    A(i, reacs(coupled)) = 4;
                     % -1 indicates an uncoupled pair for remembering to skip 
                     % it without any need for further double check later
-                    A(reacs(~coupled & rev == 1 & A(reacs, reacs(i)) == 0), ...
+                    A(reacs(~coupled & rev == 1 & A(reacs, i) == 0), ...
                         reacs(dcouplings)) = -1;
                 end
                 % metabolic network reduction
-                c = S.'*result.x(1:m);
-                S = S + repmat(S(:, i), 1, n)*spdiags(-c/c(i), 0, n, n);
-                [S, rev] = mergeFullyCoupled(S, rev, i, i, 1);
-                reacs(i) = [];
-                [m, n] = size(S);
+                if reduction
+                    c = S.'*result.x(1:m);
+                    S = S + repmat(S(:, i), 1, n)*spdiags(-c/c(i), 0, n, n);
+                    [S, rev] = mergeFullyCoupled(S, rev, i, i, 1);
+                    reacs(i) = [];
+                    [m, n] = size(S);
+                end
+                reactions(i) = true;
+                for j = i+1:k
+                    if reactions(j)
+                        if all(A(i, reacs(rev == 0 & ~reactions(reacs))) == ...
+                                A(j, reacs(rev == 0 & ~reactions(reacs))))
+                            A(i, j) = 2;
+                            A(j, i) = 2;
+                        elseif all(A(i, reacs(rev == 0 & ~reactions(reacs))) ...
+                                <= A(j, reacs(rev == 0 & ~reactions(reacs))))
+                            A(i, j) = 3;
+                            A(j, i) = 4;
+                        elseif all(A(i, reacs(rev == 0 & ~reactions(reacs))) ...
+                                >= A(j, reacs(rev == 0 & ~reactions(reacs))))
+                            A(i, j) = 4;
+                            A(j, i) = 3;
+                        end
+                    end
+                end
             end
         end
     end
     % the usage of -1 was temporary and we return to our earlier convention
     A(A == -1) = 0;
-    k = length(A);
     A(logical(eye(k))) = 1;
     t2 = cputime;
     fprintf('Finding the directional and partial coupling relations: %.3f\n', t2-t1);
     t1 = t2;
     %% postprocessing to fill in the flux coupling table for the original 
     % metabolic network from the flux coupling relations for the reduced one
-    for i = 1:k-1
-        if all(reacs ~= i)
-            for j = i+1:k
-                if all(reacs ~= j)
-                    if all(A(i, reacs) == A(j, reacs))
-                        A(i, j) = 2;
-                        A(j, i) = 2;
-                    elseif all(A(i, reacs) <= A(j, reacs))
-                        A(i, j) = 3;
-                        A(j, i) = 4;
-                    elseif all(A(i, reacs) >= A(j, reacs))
-                        A(i, j) = 4;
-                        A(j, i) = 3;
-                    end
-                end
-            end
-        end
-    end
-    t2 = cputime;
-    fprintf('Metabolic network reductions postprocessing: %.3f\n', t2-t1);
-    t1 = t2;
-    %% inferring by the transitivity of full coupling relations
     map = repmat(fullCouplings.', k, 1) == repmat(reacNum, 1, length(duplicates));
     fctable = map.'*A*map;
+    t2 = cputime;
+    fprintf('Inferring by the transitivity of full coupling relations: %.3f\n', t2-t1);
+    t1 = t2;
     %% reaction pairs that become blocked after merging isozymes are fully coupled
     for i = 1:duplicates(end)
         blockedAfterMerging = find(duplicates == i);
@@ -194,7 +203,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, varargin)
         end
     end
     fctable(logical(eye(size(fctable)))) = 1;
-    fprintf('Inferring by the transitivity of full coupling relations: %.3f\n', cputime-t1);
+    fprintf('Metabolic network reductions postprocessing: %.3f\n', cputime-t1);
     fprintf('Reduced number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', ...
         m, n, nnz(S));
 end
