@@ -28,9 +28,18 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     else
         solver = 'linprog';
     end
+    [m, n] = size(S);
+    fprintf('Original number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', ...
+        m, n, nnz(S));
+    fprintf('Original number of:\n\treversible reactions = %d;\tirreversible reactions = %d\n', ...
+        sum(rev), n-sum(rev));
+    numLP = 0;
+    numLE = 0;
     %% identifying the blocked reactions and removing them from the network
     t1 = cputime;
     S = unique(S, 'rows', 'stable');
+    numLP = numLP + 1;
+    numLE = numLE + 1;
     [S, rev, blocked] = blockedReac(S, rev, solver);
     % aggregating all the isozymes
     [~, reacNum, duplicates] = unique([S.', rev], 'rows', 'stable');
@@ -39,6 +48,8 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     rev = rev(reacNum);
     fullCouplings = reacNum(duplicates);
     % removing the newly blocked reactions
+    numLP = numLP + 1;
+    numLE = numLE + 1;
     [S, rev, newlyBlocked] = blockedReac(S, rev, solver);
     reacNum(newlyBlocked == 1) = [];
     t2 = cputime;
@@ -68,6 +79,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
         end
     end
     % finding the rest of full coupling relations
+    numLE = numLE + 1;
     n = size(S, 2);
     [Q, R, ~] = qr(S.');
     tol = norm(S, 'fro')*eps(class(S));
@@ -81,13 +93,9 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
         [M, j] = max(abs(X(i, 1:i-1)));
         % this is in fact cauchy-schwarz inequality
         if M > 1 - tol
-            % c is the full coupling coefficient
-            %c = sign(X(i, j))*Y(j, j)/Y(i, i);
-            %if norm(Z(i, :) - c*Z(j, :)) < tol
             [S, rev] = mergeFullyCoupled(S, rev, j, i, sign(X(i, j))*Y(j, j)/Y(i, i));
             fullCouplings(fullCouplings == reacNum(i)) = reacNum(j);
             reacNum(i) = [];
-            %end
         end
     end
     S(:, rev == -1) = -S(:, rev == -1);
@@ -98,7 +106,9 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     [m, n] = size(S);
     fprintf('Reduced number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', ...
         m, n, nnz(S));
-    %% computing the set of fully reversible reactions 
+    %% computing the set of fully reversible reactions
+    numLP = numLP + 1;
+    numLE = numLE + 1;
     [~, ~, prev] = blockedReac(S(:, rev == 1), rev(rev == 1), solver);
     % marking the Frev set by 2 in the rev vector
     rev(rev == 1) = 2 - prev;
@@ -113,6 +123,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     for i = n:-1:1
         if rev(i) ~= 2
             %% Irev ---> Irev couplings
+            numLP = numLP +1;
             result = directionallyCoupled(S, rev, i, solver);
             dcouplings = result.x(m+1:end) < -0.5;
             dcouplings(i) = false;
@@ -134,6 +145,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
                     reacs(rev == 1)), [], 1);
                 %% Prev ---> Irev couplings
                 if any(A(reacs(rev == 1), i) == 0)
+                    numLE = numLE + 1;
                     coupled = false(n, 1);
                     [Q, R, ~] = qr(transpose(S(:, ~dcouplings)));
                     tol = norm(S(:, ~dcouplings), 'fro')*eps(class(S));
@@ -206,4 +218,6 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     fprintf('Metabolic network reductions postprocessing: %.3f\n', cputime-t1);
     fprintf('Reduced number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', ...
         m, n, nnz(S));
+    fprintf('The number of solved:\n\tlinear programs = %d;\tsystems of linear equations = %d\n', ...
+        numLP, numLE);
 end
