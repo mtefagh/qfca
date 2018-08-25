@@ -9,7 +9,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
 %   - reduction: logical indicating whether DCE-induced reductions should be
 %   carried out or not
 %   - solver: the LP solver to be used; the currently available options are
-%   either 'linprog' or 'gurobi' with the default value of 'linprog'
+%   either 'gurobi' or 'linprog' with the default value of 'linprog'
 %   
 %   - S_reduced: the reduced sparse stoichiometric matrix
 %   - rev_reduced: the reduced reversibility vector
@@ -115,14 +115,14 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     t2 = cputime;
     fprintf('Correcting the reversibility types: %.3f\n', t2-t1);
     t1 = t2;
-    %% QFCA finds the coupling coefficients
+    %% QFCA finds the flux coupling coefficients
     k = n;
     reacs = 1:n;
     reactions = false(n, 1);
     A = zeros(n);
     for i = n:-1:1
         if rev(i) ~= 2
-            %% Irev ---> Irev couplings
+            %% Irev ---> Irev flux coupling relations
             numLP = numLP +1;
             result = directionallyCoupled(S, rev, i, solver);
             dcouplings = result.x(m+1:end) < -0.5;
@@ -143,7 +143,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
                     reacs(dcouplings)), [], 2);
                 A(i, reacs(rev == 1)) = max(A(reacs(dcouplings), ...
                     reacs(rev == 1)), [], 1);
-                %% Prev ---> Irev couplings
+                %% Prev ---> Irev flux coupling relations
                 if any(A(reacs(rev == 1), i) == 0)
                     numLE = numLE + 1;
                     coupled = false(n, 1);
@@ -160,7 +160,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
                     A(reacs(~coupled & rev == 1 & A(reacs, i) == 0), ...
                         reacs(dcouplings)) = -1;
                 end
-                % metabolic network reduction
+                % metabolic network reductions induced by DCE
                 if reduction
                     c = S.'*result.x(1:m);
                     S = S + repmat(S(:, i), 1, n)*spdiags(-c/c(i), 0, n, n);

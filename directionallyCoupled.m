@@ -1,6 +1,6 @@
 function result = directionallyCoupled(S, rev, i, solver)
 %% directionallyCoupled finds all the directionally coupled reactions to i
-% the currently available options for the LP solver are 'linprog' and 'gurobi'
+% the currently available options for the LP solver are 'gurobi' and 'linprog'
     [m, n] = size(S);
     irevIndex = [m+1:m+i-1, m+i+1:m+n];
     irevIndex = irevIndex(rev([1:i-1, i+1:n]) == 0);
@@ -38,6 +38,19 @@ function result = directionallyCoupled(S, rev, i, solver)
             fprintf('Optimization returned status: %s\n', result.status);
         end
     else
-        warning('The entered solver is not supported in this current version!');
+        model.b = model.rhs;
+        model.c = model.obj;
+        model.osense = 1;
+        model.sense(model.sense == '=') = 'E';
+        model.sense(model.sense == '<') = 'L';
+        model.csense = model.sense;
+        solution = solveCobraLP(model, 'solver', solver);
+        result.x = solution.full;
+        result.objval = solution.obj;
+        result.status = solution.stat;
+        if result.status ~= 1
+            warning('Optimization is unstable!');
+            fprintf('Optimization returned status: %s\n', result.status);
+        end
     end
 end
