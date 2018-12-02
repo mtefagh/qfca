@@ -1,5 +1,7 @@
-function result = directionallyCoupled(S, rev, i, solver)
+function [certificate, result] = directionallyCoupled(S, rev, i, solver)
 %% directionallyCoupled finds all the directionally coupled reactions to i
+% certificate is the fictitious metabolite for the positive certificate 
+% S.'*certificate will be the corresponding directional coupling equation
 % the currently available options for the LP solver are 'gurobi' and 'linprog'
     [m, n] = size(S);
     irevIndex = [m+1:m+i-1, m+i+1:m+n];
@@ -53,4 +55,6 @@ function result = directionallyCoupled(S, rev, i, solver)
             fprintf('Optimization returned status: %s\n', result.status);
         end
     end
+    certificate = result.x(1:m);
+    result = result.x(m+1:end);
 end

@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>example</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2018-10-02"><meta name="DC.source" content="example.m"><style type="text/css">
+      --><title>example</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2018-12-01"><meta name="DC.source" content="example.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -74,20 +74,20 @@ load(<span class="string">'ecoli_core_model.mat'</span>);
 	metabolites = 72;	reactions = 95;	nonzero elements = 360
 Original number of:
 	reversible reactions = 59;	irreversible reactions = 36
-Identifying the blocked reactions and removing them from the network: 0.078
+Identifying the blocked reactions and removing them from the network: 0.027
 Reduced number of:
 	metabolites = 72;	reactions = 95;	nonzero elements = 360
-Finding the full coupling relations: 0.016
+Finding the full coupling relations: 0.003
 Reduced number of:
-	metabolites = 39;	reactions = 60;	nonzero elements = 279
-Correcting the reversibility types: 0.016
-Finding the directional and partial coupling relations: 0.969
+	metabolites = 34;	reactions = 60;	nonzero elements = 236
+Correcting the reversibility types: 0.014
+Finding the directional and partial coupling relations: 0.419
 Inferring by the transitivity of full coupling relations: 0.000
 Metabolic network reductions postprocessing: 0.000
 Reduced number of:
-	metabolites = 37;	reactions = 58;	nonzero elements = 274
+	metabolites = 30;	reactions = 58;	nonzero elements = 224
 The number of solved:
-	linear programs = 54;	systems of linear equations = 6
+	linear programs = 54;	systems of linear equations = 8
 </pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018b</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 % The following code uses QFCA to compute the table of flux coupling relations and the list of blocked reactions for the E. coli core model and also returns the reduced metabolic network.

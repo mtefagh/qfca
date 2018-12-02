@@ -3,15 +3,13 @@ Quantitative Flux Coupling Analysis
 
 Introduction
 ----
-
 *Quantitative flux coupling analysis* (QFCA) is a quantitative approach to identify and remove the redundancies of the steady-state flux cone. The full description and theory of the algorithm implemented by QFCA is discussed in the associated papers. When referencing QFCA, please cite the following:
 - 1st paper
 - 2nd paper
 
 Quick Start
 ----
-
-The following example uses the `QFCA` function to compute the table of **flux coupling relations** and the list of **blocked reactions** for the [E. coli core model](http://systemsbiology.ucsd.edu/Downloads/EcoliCore) and also returns the **reduced metabolic network**.
+The following example uses the `QFCA` function to compute the table of **flux coupling relations** and the list of **blocked reactions** for the [core *E. coli* model](http://systemsbiology.ucsd.edu/Downloads/EcoliCore) and also returns the **reduced metabolic network**.
 ```matlab
 load('ecoli_core_model.mat');
 [S_reduced, rev_reduced, fctable, blocked] = QFCA(model.S, model.rev, true, 'linprog');
@@ -40,5 +38,4 @@ The number of solved:
 
 License
 ----
-
 QFCA is distributed under the [GNU General Public License v3.0](http://www.gnu.org/copyleft/gpl.html).

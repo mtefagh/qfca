@@ -1,10 +1,8 @@
 function [S, rev, blocked] = blockedReac(S, rev, solver)
-% blockedReac finds the blocked reactions and removes them from the network
-    [m, n] = size(S);
-    blocked = zeros(n, 1);
+%% blockedReac finds the blocked reactions and removes them from the network
     % identifying the blocked irreversible reactions
-    result = directionallyCoupled(S, rev, 0, solver);
-    blocked(result.x(m+1:end) < -0.5) = 1;
+    [~, result] = directionallyCoupled(S, rev, 0, solver);
+    blocked = 1*(result < -0.5);
     % identifying the blocked reversible reactions
     [Q, R, ~] = qr(transpose(S(:, blocked == 0)));
     % setting up the zero-tolerance parameter
