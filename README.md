@@ -7,6 +7,8 @@ Introduction
 - Tefagh, M. & Boyd, S.P. J. Math. Biol. (2018). [https://doi.org/10.1007/s00285-018-1316-9](https://doi.org/10.1007/s00285-018-1316-9)
 - Tefagh, M. & Boyd, S.P. bioRxiv (2018). [https://doi.org/10.1101/499251](https://doi.org/10.1101/499251)
 
+![Metabolic Network Reductions](https://connect.biorxiv.org/qr/qr_img.php?id=499251)
+
 Quick Start
 ----
 The following example uses the `QFCA` function to compute the table of **flux coupling relations** and the list of **blocked reactions** for the [core *E. coli* model](http://systemsbiology.ucsd.edu/Downloads/EcoliCore) and also returns the **reduced metabolic network**.
