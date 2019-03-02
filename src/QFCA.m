@@ -2,32 +2,49 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
 % QFCA computes the table of flux coupling relations and the list of blocked 
 % reactions for a metabolic network specified by its stoichiometric matrix 
 % and irreversible reactions and also returns the reduced metabolic network.
-%% Usage
-% [S_reduced, rev_reduced, fctable, blocked] = QFCA(S, rev, reduction [, solver])
-%   - S: the associated sparse stoichiometric matrix
-%   - rev: the 0-1 vector with 1's corresponding to the reversible reactions
-%   - reduction: logical indicating whether DCE-induced reductions should be
-%   carried out or not
-%   - solver: the LP solver to be used; the currently available options are
-%   either 'gurobi' or 'linprog' with the default value of 'linprog'
+%
+% USAGE:
+%
+%   [S_reduced, rev_reduced, fctable, blocked] = QFCA(S, rev, reduction [, solver])
+%
+% INPUTS:
+%   S:          the associated sparse stoichiometric matrix
+%   rev:        the 0-1 vector with 1's corresponding to the reversible reactions
+%   reduction:  logical indicating whether DCE-induced reductions should be
+%               carried out or not
+% 
+% OPTIONAL INPUT:
+%   solver:     the LP solver to be used; the currently available options are
+%               either 'gurobi' or 'linprog' with the default value of 'linprog'
 %   
-%   - S_reduced: the reduced sparse stoichiometric matrix
-%   - rev_reduced: the reduced reversibility vector
-%   - fctable: the resulting flux coupling matrix
-%           * For the choice of entries, we use the F2C2 convention for the
-%           sake of compatibility. The meaning of the entry (i, j) is:
+% OUTPUTS:
+%   S_reduced:      the reduced sparse stoichiometric matrix
+%   rev_reduced:    the reduced reversibility vector
+%   fctable:        the resulting flux coupling matrix
+%       * For the choice of entries, we use the F2C2 convention for the
+%       sake of compatibility. The meaning of the entry (i, j) is:
 %           0 - uncoupled reactions
 %           1 - fully coupled reactions
 %           2 - partially coupled reactions
 %           3 - reaction i is directionally coupled to reaction j
 %           4 - reaction j is directionally coupled to reaction i
-%   - blocked: the 0-1 vector with 1's corresponding to the blocked reactions
-    %% setting up the LP solver
-    if ~isempty(varargin)
-        solver = varargin{1};
-    else
-        solver = 'linprog';
-    end
+%   blocked:        the 0-1 vector with 1's corresponding to the blocked reactions
+%
+% EXAMPLE:
+%
+%   % The following code uses QFCA to compute the table of flux coupling relations 
+%   % and the list of blocked reactions for the E. coli core model and also returns
+%   % the reduced metabolic network.
+%   load('ecoli_core_model.mat');
+%   [S_reduced, rev_reduced, fctable, blocked] = QFCA(model.S, model.rev, true);
+%
+% NOTE:
+%   The directionallyCoupled function can be utilized as a stand-alone function 
+%   to find fictitious metabolite certificates.
+%
+% .. Authors:
+%       - Mojtaba Tefagh, Stephen P. Boyd, 2019, Stanford University
+
     [m, n] = size(S);
     rev = double(rev);
     fprintf('Original number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', ...
@@ -36,6 +53,14 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
         sum(rev), n-sum(rev));
     numLP = 0;
     numLE = 0;
+    
+    %% setting up the LP solver
+    if ~isempty(varargin)
+        solver = varargin{1};
+    else
+        solver = 'linprog';
+    end
+    
     %% identifying the blocked reactions and removing them from the network
     tic;
     S = unique(S, 'rows', 'stable');
@@ -59,6 +84,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     [m, n] = size(S);
     fprintf('Reduced number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', ...
         m, n, nnz(S));
+    
     %% identifying the fully coupled pairs of reactions
     % finding the trivial full coupling relations
     flag = true;
@@ -107,6 +133,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     [m, n] = size(S);
     fprintf('Reduced number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', ...
         m, n, nnz(S));
+    
     %% computing the set of fully reversible reactions
     numLP = numLP + 1;
     numLE = numLE + 1;
@@ -116,6 +143,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     t = toc;
     fprintf('Correcting the reversibility types: %.3f\n', t);
     tic;
+    
     %% QFCA finds the flux coupling coefficients
     k = n;
     reacs = 1:n;
@@ -123,12 +151,12 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     A = zeros(n);
     for i = k:-1:1
         if rev(i) ~= 2
-            %% Irev ---> Irev flux coupling relations
             numLP = numLP +1;
             [certificate, result] = directionallyCoupled(S, rev, i, solver);
             dcouplings = result < -0.5;
             dcouplings(i) = false;
             if any(dcouplings)
+                %% Irev ---> Irev flux coupling relations
                 A(reacs, i) = 3*dcouplings;
                 A(i, reacs) = 4*dcouplings.';
                 dcouplings(i) = true;
@@ -139,6 +167,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
                     reacs(dcouplings)), [], 2);
                 A(i, reacs(rev == 1)) = max(A(reacs(dcouplings), ...
                     reacs(rev == 1)), [], 1);
+                
                 %% Prev ---> Irev flux coupling relations
                 if any(A(reacs(rev == 1), i) == 0)
                     numLE = numLE + 1;
@@ -156,7 +185,8 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
                     A(reacs(~coupled & rev == 1 & A(reacs, i) == 0), ...
                         reacs(dcouplings)) = -1;
                 end
-                % metabolic network reductions induced by DCE
+                
+                %% metabolic network reductions induced by DCE
                 if reduction
                     c = S.'*certificate;
                     S = S + repmat(S(:, i), 1, n)*spdiags(-c/c(i), 0, n, n);
@@ -200,6 +230,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     t = toc;
     fprintf('Finding the directional and partial coupling relations: %.3f\n', t);
     tic;
+    
     %% postprocessing to fill in the flux coupling table for the original 
     % metabolic network from the flux coupling relations for the reduced one
     map = repmat(fullCouplings.', k, 1) == repmat(reacNum, 1, length(duplicates));
@@ -207,6 +238,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     t = toc;
     fprintf('Inferring by the transitivity of full coupling relations: %.3f\n', t);
     tic;
+    
     %% reaction pairs that become blocked after merging isozymes are fully coupled
     for i = 1:duplicates(end)
         blockedAfterMerging = find(duplicates == i);

@@ -1,8 +1,28 @@
 function [certificate, result] = directionallyCoupled(S, rev, i, solver)
-%% directionallyCoupled finds all the directionally coupled reactions to i
-% certificate is the fictitious metabolite for the positive certificate 
-% S.'*certificate will be the corresponding directional coupling equation
-% the currently available options for the LP solver are 'gurobi' and 'linprog'
+% directionallyCoupled finds all the directionally coupled reactions to i
+%
+% USAGE:
+%
+%   [certificate, result] = directionallyCoupled(S, rev, i, solver)
+%   
+% INPUTS:
+%   S:          the associated sparse stoichiometric matrix
+%   rev:        the 0-1 vector with 1's corresponding to the reversible reactions
+%   i:          the index of reaction to which others are directionally coupled
+%   solver:     the LP solver to be used; the currently available options are
+%               'gurobi', 'linprog', and otherwise the default COBRA LP solver
+%
+% OUTPUTS:
+%   certificate:    the fictitious metabolite for the positive certificate;
+%                   S.'*certificate will be the corresponding directional 
+%                   coupling equation
+%   result:         the result returned by the LP solver; all the -1 entries
+%                   are directionally coupled to reaction i and the other 
+%                   entries except i are zero
+%
+% .. Authors:
+%       - Mojtaba Tefagh, Stephen P. Boyd, 2019, Stanford University
+
     [m, n] = size(S);
     irevIndex = [m+1:m+i-1, m+i+1:m+n];
     irevIndex = irevIndex(rev([1:i-1, i+1:n]) == 0);
@@ -17,14 +37,14 @@ function [certificate, result] = directionallyCoupled(S, rev, i, solver)
     model.lb(irevIndex) = -1;
     model.ub = [Inf(m, 1); zeros(n, 1)];
     model.ub(m+i) = Inf;
-    if strcmp(solver, 'gurobi')
+    if strcmp(solver, 'gurobi') % gurobi
         params.outputflag = 0;
         result = gurobi(model, params);
         if ~strcmp(result.status, 'OPTIMAL')
             warning('Optimization is unstable!');
             fprintf('Optimization returned status: %s\n', result.status);
         end
-    elseif strcmp(solver, 'linprog')
+    elseif strcmp(solver, 'linprog') % linprog
         problem.f = model.obj;
         problem.Aineq = model.A(rev == 0, :);
         problem.bineq = model.rhs(rev == 0);
@@ -39,7 +59,7 @@ function [certificate, result] = directionallyCoupled(S, rev, i, solver)
             warning('Optimization is unstable!');
             fprintf('Optimization returned status: %s\n', result.status);
         end
-    else
+    else % COBRA
         model.b = model.rhs;
         model.c = model.obj;
         model.osense = 1;
