@@ -3,22 +3,22 @@ function [certificate, result] = directionallyCoupled(S, rev, i, solver)
 %
 % USAGE:
 %
-%   [certificate, result] = directionallyCoupled(S, rev, i, solver)
+%    [certificate, result] = directionallyCoupled(S, rev, i, solver)
 %   
 % INPUTS:
-%   S:          the associated sparse stoichiometric matrix
-%   rev:        the 0-1 vector with 1's corresponding to the reversible reactions
-%   i:          the index of reaction to which others are directionally coupled
-%   solver:     the LP solver to be used; the currently available options are
+%    S:         the associated sparse stoichiometric matrix
+%    rev:       the 0-1 vector with 1's corresponding to the reversible reactions
+%    i:         the index of reaction to which others are directionally coupled
+%    solver:    the LP solver to be used; the currently available options are
 %               'gurobi', 'linprog', and otherwise the default COBRA LP solver
 %
 % OUTPUTS:
-%   certificate:    the fictitious metabolite for the positive certificate;
-%                   S.'*certificate will be the corresponding directional 
-%                   coupling equation
-%   result:         the result returned by the LP solver; all the -1 entries
-%                   are directionally coupled to reaction i and the other 
-%                   entries except i are zero
+%    certificate:    the fictitious metabolite for the positive certificate;
+%                    S.'*certificate will be the corresponding directional 
+%                    coupling equation
+%    result:         the result returned by the LP solver; all the -1 entries
+%                    are directionally coupled to reaction i and the other 
+%                    entries except i are zero
 %
 % .. Authors:
 %       - Mojtaba Tefagh, Stephen P. Boyd, 2019, Stanford University

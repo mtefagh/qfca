@@ -5,42 +5,43 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
 %
 % USAGE:
 %
-%   [S_reduced, rev_reduced, fctable, blocked] = QFCA(S, rev, reduction [, solver])
+%    [S_reduced, rev_reduced, fctable, blocked] = QFCA(S, rev, reduction [, solver])
 %
 % INPUTS:
-%   S:          the associated sparse stoichiometric matrix
-%   rev:        the 0-1 vector with 1's corresponding to the reversible reactions
-%   reduction:  logical indicating whether DCE-induced reductions should be
-%               carried out or not
+%    S:            the associated sparse stoichiometric matrix
+%    rev:          the 0-1 vector with 1's corresponding to the reversible reactions
+%    reduction:    logical indicating whether DCE-induced reductions should be
+%                  carried out or not
 % 
 % OPTIONAL INPUT:
-%   solver:     the LP solver to be used; the currently available options are
+%    solver:    the LP solver to be used; the currently available options are
 %               either 'gurobi' or 'linprog' with the default value of 'linprog'
-%   
+%
 % OUTPUTS:
-%   S_reduced:      the reduced sparse stoichiometric matrix
-%   rev_reduced:    the reduced reversibility vector
-%   fctable:        the resulting flux coupling matrix
-%       * For the choice of entries, we use the F2C2 convention for the
-%       sake of compatibility. The meaning of the entry (i, j) is:
-%           0 - uncoupled reactions
-%           1 - fully coupled reactions
-%           2 - partially coupled reactions
-%           3 - reaction i is directionally coupled to reaction j
-%           4 - reaction j is directionally coupled to reaction i
-%   blocked:        the 0-1 vector with 1's corresponding to the blocked reactions
+%    S_reduced:      the reduced sparse stoichiometric matrix
+%    rev_reduced:    the reduced reversibility vector
+%    fctable:        the resulting flux coupling matrix; for the choice of entries, 
+%                    we use the F2C2 convention for the sake of compatibility. 
+%                    The meaning of the entry (i, j) is:
+%                      * 0 - uncoupled reactions
+%                      * 1 - fully coupled reactions
+%                      * 2 - partially coupled reactions
+%                      * 3 - reaction i is directionally coupled to reaction j
+%                      * 4 - reaction j is directionally coupled to reaction i
+%    blocked:        the 0-1 vector with 1's corresponding to the blocked reactions
 %
 % EXAMPLE:
 %
-%   % The following code uses QFCA to compute the table of flux coupling relations 
-%   % and the list of blocked reactions for the E. coli core model and also returns
-%   % the reduced metabolic network.
-%   load('ecoli_core_model.mat');
-%   [S_reduced, rev_reduced, fctable, blocked] = QFCA(model.S, model.rev, true);
+%    % The following code uses QFCA to compute the table of flux coupling relations 
+%    % and the list of blocked reactions for the E. coli core model and also returns
+%    % the reduced metabolic network.
+%    load('ecoli_core_model.mat');
+%    [S_reduced, rev_reduced, fctable, blocked] = QFCA(model.S, model.rev, true);
 %
 % NOTE:
-%   The directionallyCoupled function can be utilized as a stand-alone function 
-%   to find fictitious metabolite certificates.
+%
+%    The directionallyCoupled function can be utilized as a stand-alone function 
+%    to find fictitious metabolite certificates.
 %
 % .. Authors:
 %       - Mojtaba Tefagh, Stephen P. Boyd, 2019, Stanford University
