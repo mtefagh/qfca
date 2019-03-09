@@ -1,15 +1,18 @@
-function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
+function [reduced_net, fctable, blocked] = QFCA(model, reduction, varargin)
 % QFCA computes the table of flux coupling relations and the list of blocked 
 % reactions for a metabolic network specified by its stoichiometric matrix 
 % and irreversible reactions and also returns the reduced metabolic network.
 %
 % USAGE:
 %
-%    [S_reduced, rev_reduced, fctable, blocked] = QFCA(S, rev, reduction [, solver])
+%    [reduced_net, fctable, blocked] = QFCA(model, reduction [, solver])
 %
 % INPUTS:
-%    S:            the associated sparse stoichiometric matrix
-%    rev:          the 0-1 vector with 1's corresponding to the reversible reactions
+%    model:        the metabolic network with fields:
+%                    * .S - the associated sparse stoichiometric matrix
+%                    * .rev - the 0-1 indicator vector of the reversible reactions
+%                    * .rxns - the cell array of reaction abbreviations
+%                    * .mets - the cell array of metabolite abbreviations
 %    reduction:    logical indicating whether DCE-induced reductions should be
 %                  carried out or not
 % 
@@ -18,8 +21,11 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
 %               either 'gurobi' or 'linprog' with the default value of 'linprog'
 %
 % OUTPUTS:
-%    S_reduced:      the reduced sparse stoichiometric matrix
-%    rev_reduced:    the reduced reversibility vector
+%    reduced_net:    the reduced metabolic network with fields:
+%                      * .S - the associated sparse stoichiometric matrix
+%                      * .rev - the 0-1 indicator vector of the reversible reactions
+%                      * .rxns - cell array of reaction abbreviations
+%                      * .mets - cell array of metabolite abbreviations
 %    fctable:        the resulting flux coupling matrix; for the choice of entries, 
 %                    we use the F2C2 convention for the sake of compatibility. 
 %                    The meaning of the entry (i, j) is:
@@ -36,7 +42,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
 %    % and the list of blocked reactions for the E. coli core model and also returns
 %    % the reduced metabolic network.
 %    load('ecoli_core_model.mat');
-%    [S_reduced, rev_reduced, fctable, blocked] = QFCA(model.S, model.rev, true);
+%    [reduced_net, fctable, blocked] = QFCA(model, true, 'linprog');
 %
 % NOTE:
 %
@@ -46,8 +52,10 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
 % .. Authors:
 %       - Mojtaba Tefagh, Stephen P. Boyd, 2019, Stanford University
 
+    S = sparse(model.S);
     [m, n] = size(S);
-    rev = double(rev);
+    rev = double(model.rev);
+    rxns = model.rxns;
     fprintf('Original number of:\n\tmetabolites = %d;\treactions = %d;\tnonzero elements = %d\n', ...
         m, n, nnz(S));
     fprintf('Original number of:\n\treversible reactions = %d;\tirreversible reactions = %d\n', ...
@@ -64,20 +72,22 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     
     %% identifying the blocked reactions and removing them from the network
     tic;
-    S = unique(S, 'rows', 'stable');
+    [S, metNum, ~] = unique(S, 'rows', 'stable');
+    mets = model.mets(metNum);
     numLP = numLP + 1;
     numLE = numLE + 1;
-    [S, rev, blocked] = blockedReac(S, rev, solver);
+    [S, rev, rxns, blocked] = blockedReac(S, rev, rxns, solver);
     % aggregating all the isozymes
     [~, reacNum, duplicates] = unique([S.', rev], 'rows', 'stable');
     duplicates = duplicates.';
     S = S(:, reacNum);
     rev = rev(reacNum);
+    rxns = rxns(reacNum);
     fullCouplings = reacNum(duplicates);
     % removing the newly blocked reactions
     numLP = numLP + 1;
     numLE = numLE + 1;
-    [S, rev, newlyBlocked] = blockedReac(S, rev, solver);
+    [S, rev, rxns, newlyBlocked] = blockedReac(S, rev, rxns, solver);
     reacNum(newlyBlocked == 1) = [];
     t = toc;
     fprintf('Identifying the blocked reactions and removing them from the network: %.3f\n', t);
@@ -96,7 +106,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
             % check to see if the i-th row of S has only 2 nonzero elements
             if length(nzcols) == 2
                 n = n-1;
-                [S, rev] = mergeFullyCoupled(S, rev, nzcols(1), nzcols(2), ...
+                [S, rev, rxns] = mergeFullyCoupled(S, rev, rxns, nzcols(1), nzcols(2), ...
                     -S(i, nzcols(1))/S(i, nzcols(2)));
                 fullCouplings(fullCouplings == reacNum(nzcols(2))) = reacNum(nzcols(1));
                 reacNum(nzcols(2)) = [];
@@ -119,7 +129,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
         [M, j] = max(abs(X(i, 1:i-1)));
         % this is in fact cauchy-schwarz inequality
         if M > 1 - tol
-            [S, rev] = mergeFullyCoupled(S, rev, j, i, sign(X(i, j))*Y(j, j)/Y(i, i));
+            [S, rev, rxns] = mergeFullyCoupled(S, rev, rxns, j, i, sign(X(i, j))*Y(j, j)/Y(i, i));
             fullCouplings(fullCouplings == reacNum(i)) = reacNum(j);
             reacNum(i) = [];
         end
@@ -128,6 +138,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     rev(rev == -1) = 0;
     [p, ~, ~] = find(P);
     S = S(p(1:rankS), :);
+    mets = mets(p(1:rankS));
     t = toc;
     fprintf('Finding the full coupling relations: %.3f\n', t);
     tic;
@@ -138,7 +149,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
     %% computing the set of fully reversible reactions
     numLP = numLP + 1;
     numLE = numLE + 1;
-    [~, ~, prev] = blockedReac(S(:, rev == 1), rev(rev == 1), solver);
+    [~, ~, ~, prev] = blockedReac(S(:, rev == 1), rev(rev == 1), rxns(rev == 1), solver);
     % marking the Frev set by 2 in the rev vector
     rev(rev == 1) = 2 - prev;
     t = toc;
@@ -193,6 +204,12 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
                     S = S + repmat(S(:, i), 1, n)*spdiags(-c/c(i), 0, n, n);
                     S(:, i) = [];
                     rev(i) = [];
+                    for j = 1:n
+                        if dcouplings(j)
+                            model.rxns(j) = {strjoin([rxns(j), rxns(i)], ', ')};
+                        end
+                    end
+                    rxns(i) = [];
                     reacs(i) = [];
                     % deleting the redundant rows from the stoichiometric matrix
                     numLE = numLE + 1;
@@ -200,6 +217,7 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
                     [p, ~, ~] = find(P);
                     rankS  = sum(abs(diag(R)) > tol);
                     S = S(p(1:rankS), :);
+                    mets = mets(p(1:rankS));
                     [m, n] = size(S);
                 elseif result(i) < 0
                     S(:, i) = -S(:, i);
@@ -259,4 +277,8 @@ function [S, rev, fctable, blocked] = QFCA(S, rev, reduction, varargin)
         m, n, nnz(S));
     fprintf('The number of solved:\n\tlinear programs = %d;\tsystems of linear equations = %d\n', ...
         numLP, numLE);
+    reduced_net.S = S;
+    reduced_net.rev = rev;
+    reduced_net.rxns = rxns;
+    reduced_net.mets = mets;
 end
