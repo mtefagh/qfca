@@ -279,6 +279,6 @@ function [reduced_net, fctable, blocked] = QFCA(model, reduction, varargin)
         numLP, numLE);
     reduced_net.S = S;
     reduced_net.rev = rev;
-    reduced_net.rxns = rxns;
-    reduced_net.mets = mets;
+    reduced_net.rxns = cellstr(rxns);
+    reduced_net.mets = cellstr(mets);
 end
