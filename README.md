@@ -14,7 +14,7 @@ Quick Start
 The following example uses the `QFCA` function to compute the table of **flux coupling relations** and the list of **blocked reactions** for the [core *E. coli* model](http://systemsbiology.ucsd.edu/Downloads/EcoliCore) and also returns the **reduced metabolic network**.
 ```matlab
 load('ecoli_core_model.mat');
-[S_reduced, rev_reduced, fctable, blocked] = QFCA(model.S, model.rev, true, 'linprog');
+[reduced_net, fctable, blocked] = QFCA(model, true, 'linprog');
 ```
 The output of the above code is as follows.
 ```matlab
@@ -22,16 +22,16 @@ Original number of:
 	metabolites = 72;	reactions = 95;	nonzero elements = 360
 Original number of:
 	reversible reactions = 59;	irreversible reactions = 36
-Identifying the blocked reactions and removing them from the network: 0.027
+Identifying the blocked reactions and removing them from the network: 0.034
 Reduced number of:
 	metabolites = 72;	reactions = 95;	nonzero elements = 360
-Finding the full coupling relations: 0.003
+Finding the full coupling relations: 0.008
 Reduced number of:
 	metabolites = 34;	reactions = 60;	nonzero elements = 236
-Correcting the reversibility types: 0.014
-Finding the directional and partial coupling relations: 0.419
+Correcting the reversibility types: 0.037
+Finding the directional and partial coupling relations: 0.411
 Inferring by the transitivity of full coupling relations: 0.000
-Metabolic network reductions postprocessing: 0.000
+Metabolic network reductions postprocessing: 0.001
 Reduced number of:
 	metabolites = 30;	reactions = 58;	nonzero elements = 224
 The number of solved:
@@ -41,4 +41,4 @@ Furthermore, the `directionallyCoupled` function can be utilized as a stand-alon
 
 License
 ----
-QFCA is distributed under the [GNU General Public License v3.0](http://www.gnu.org/copyleft/gpl.html).
+*QFCA* is distributed under the [GNU General Public License v3.0](http://www.gnu.org/copyleft/gpl.html).
