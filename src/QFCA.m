@@ -209,7 +209,7 @@ function [reduced_net, fctable, blocked] = QFCA(model, reduction, varargin)
                     rev(i) = [];
                     for j = 1:n
                         if dcouplings(j)
-                            model.rxns(j) = {strjoin([rxns(j), rxns(i)], ', ')};
+                            rxns(j) = {strjoin([rxns(j), rxns(i)], ', ')};
                         end
                     end
                     rxns(i) = [];
