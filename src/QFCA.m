@@ -189,10 +189,9 @@ function [reduced_net, fctable, blocked] = QFCA(model, reduction, varargin)
                     coupled = false(n, 1);
                     [Q, R, ~] = qr(transpose(S(:, ~dcouplings)));
                     tol = norm(S(:, ~dcouplings), 'fro')*eps(class(S));
-                    Z = Q(:, sum(abs(diag(R)) > tol)+1:end);
-                    coupled(~dcouplings & rev == 1 & A(reacs, i) == 0) = ...
-                        vecnorm(Z(rev(~dcouplings) == 1 & A(reacs(~dcouplings), ...
-                        i) == 0, :), 2, 2) < tol;
+                    Z = Q(rev(~dcouplings) == 1 & A(reacs(~dcouplings), i) == 0, ...
+                        sum(abs(diag(R)) > tol)+1:end);
+                    coupled(~dcouplings & rev == 1 & A(reacs, i) == 0) = diag(Z*Z.') < tol^2;
                     A(reacs(coupled), i) = 3;
                     A(i, reacs(coupled)) = 4;
                     % -1 indicates an uncoupled pair for remembering to skip 

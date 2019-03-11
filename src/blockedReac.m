@@ -28,9 +28,8 @@ function [S, rev, rxns, blocked] = blockedReac(S, rev, rxns, solver)
     tol = norm(S(:, blocked == 0), 'fro')*eps(class(S));
     % identifying the blocked reversible reactions
     [Q, R, ~] = qr(transpose(S(:, blocked == 0)));
-    Z = Q(:, sum(abs(diag(R)) > tol)+1:end);
-    blocked(blocked == 0 & rev == 1) = vecnorm(Z(rev(blocked == 0) == 1, :), ...
-        2, 2) < tol;
+    Z = Q(rev(blocked == 0) == 1, sum(abs(diag(R)) > tol)+1:end);
+    blocked(blocked == 0 & rev == 1) = diag(Z*Z.') < tol^2;
     % removing the blocked reactions from the metabolic network
     S(:, blocked == 1) = [];
     rev(blocked == 1) = [];
