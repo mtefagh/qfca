@@ -82,6 +82,9 @@ function [reduced_net, fctable, blocked] = QFCA(model, reduction, varargin)
     duplicates = duplicates.';
     S = S(:, reacNum);
     rev = rev(reacNum);
+    for i = 1:length(reacNum)
+        rxns(reacNum(i)) = {strjoin(rxns(duplicates == i), ', ')};
+    end
     rxns = rxns(reacNum);
     fullCouplings = reacNum(duplicates);
     % removing the newly blocked reactions
@@ -279,6 +282,6 @@ function [reduced_net, fctable, blocked] = QFCA(model, reduction, varargin)
         numLP, numLE);
     reduced_net.S = S;
     reduced_net.rev = rev;
-    reduced_net.rxns = cellstr(rxns);
-    reduced_net.mets = cellstr(mets);
+    reduced_net.rxns = rxns;
+    reduced_net.mets = mets;
 end

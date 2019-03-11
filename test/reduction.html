@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>reduction</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-03-09"><meta name="DC.source" content="reduction.m"><style type="text/css">
+      --><title>reduction</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-03-10"><meta name="DC.source" content="reduction.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -70,34 +70,36 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 time = tic;
 [reduced_net, fctable, blocked] = QFCA(model, true, <span class="string">'gurobi'</span>);
 toc(time);
-save(<span class="string">'reduced_net.mat'</span>, <span class="string">'reduced_net'</span>);
 save(<span class="string">'blocked.mat'</span>, <span class="string">'blocked'</span>);
+save(<span class="string">'fctable.mat'</span>, <span class="string">'fctable'</span>);
+save(<span class="string">'reduced_net.mat'</span>, <span class="string">'reduced_net'</span>);
 </pre><pre class="codeoutput">Original number of:
 	metabolites = 13249;	reactions = 24311;	nonzero elements = 95774
 Original number of:
 	reversible reactions = 0;	irreversible reactions = 24311
-Identifying the blocked reactions and removing them from the network: 252.924
+Identifying the blocked reactions and removing them from the network: 246.642
 Reduced number of:
 	metabolites = 11426;	reactions = 13825;	nonzero elements = 55470
-Finding the full coupling relations: 1431.569
+Finding the full coupling relations: 1276.117
 Reduced number of:
 	metabolites = 2890;	reactions = 11757;	nonzero elements = 47929
-Correcting the reversibility types: 0.014
-Finding the directional and partial coupling relations: 42155.429
-Inferring by the transitivity of full coupling relations: 121.589
-Metabolic network reductions postprocessing: 1.862
+Correcting the reversibility types: 0.019
+Finding the directional and partial coupling relations: 42180.946
+Inferring by the transitivity of full coupling relations: 123.803
+Metabolic network reductions postprocessing: 1.859
 Reduced number of:
 	metabolites = 1278;	reactions = 10255;	nonzero elements = 56457
 The number of solved:
 	linear programs = 11760;	systems of linear equations = 1506
-Elapsed time is 43963.895858 seconds.
+Elapsed time is 43829.729200 seconds.
 </pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018b</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 reduction_data;
 time = tic;
 [reduced_net, fctable, blocked] = QFCA(model, true, 'gurobi');
 toc(time);
-save('reduced_net.mat', 'reduced_net');
 save('blocked.mat', 'blocked');
+save('fctable.mat', 'fctable');
+save('reduced_net.mat', 'reduced_net');
 ##### SOURCE END #####
 --></body></html>

@@ -24,6 +24,6 @@ end
 
 model.S = S;
 model.rev = zeros(length(id), 1);
-model.rxns = id;
-model.mets = mets;
+model.rxns = cellstr(id);
+model.mets = cellstr(mets);
 clear i j S id mets mets_names metabolites reactions bigg_universal;
