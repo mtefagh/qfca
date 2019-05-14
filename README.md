@@ -4,10 +4,8 @@ Quantitative Flux Coupling Analysis
 Introduction
 ----
 *Quantitative flux coupling analysis* (QFCA) is a quantitative approach to identify and remove the redundancies of the steady-state flux cone. The full description and theory of the algorithm implemented by QFCA is discussed in the associated papers. When referencing QFCA, please cite the following:
-- Tefagh, M. & Boyd, S.P. J. Math. Biol. (2018). [https://doi.org/10.1007/s00285-018-1316-9](https://doi.org/10.1007/s00285-018-1316-9)
+- Tefagh, M. & Boyd, S.P. J. Math. Biol. (2019) 78: 1459. [https://doi.org/10.1007/s00285-018-1316-9](https://doi.org/10.1007/s00285-018-1316-9)
 - Tefagh, M. & Boyd, S.P. bioRxiv (2018). [https://doi.org/10.1101/499251](https://doi.org/10.1101/499251)
-
-![Metabolic Network Reductions](https://connect.biorxiv.org/qr/qr_img.php?id=499251)
 
 Quick Start
 ----
